@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+.git
+.gitignore
+.dockerignore
+*.log
+.env*
+coverage
+specs
+

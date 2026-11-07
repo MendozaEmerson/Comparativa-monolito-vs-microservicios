@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Ticket Architecture Benchmark API
+  version: 1.0.0
+  description: Canonical API specification enforced identically across Modular Monolith and Microservices architectures.
+paths:
+  /api/events:
+    get:
+      summary: List active events with pagination and filters
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of events
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /api/events/{id}:
+    get:
+      summary: Get event details and current ticket availability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Event detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reservations:
+    post:
+      summary: Create ticket reservation with concurrency protection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - userId
+                - tickets
+              properties:
+                eventId:
+                  type: string
+                  format: uuid
+                userId:
+                  type: string
+                tickets:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Reservation confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Target event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Insufficient seats available (Overbooking prevented)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service unavailable (Failure degradation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reservations/{id}:
+    get:
+      summary: Get reservation detail and status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservation detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '404':
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Event:
+      type: object
+      required:
+        - id
+        - name
+        - venue
+        - eventDate
+        - totalCapacity
+        - availableTickets
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        venue:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        totalCapacity:
+          type: integer
+        availableTickets:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Reservation:
+      type: object
+      required:
+        - id
+        - eventId
+        - userId
+        - ticketsCount
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        ticketsCount:
+          type: integer
+        status:
+          type: string
+          enum: [CONFIRMED]
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
