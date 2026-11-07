@@ -1,0 +1,19 @@
+{
+  "name": "@benchmark/api-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/gateway.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/gateway.js"
+  },
+  "dependencies": {
+    "@fastify/http-proxy": "^9.4.0",
+    "fastify": "^4.26.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}
+
