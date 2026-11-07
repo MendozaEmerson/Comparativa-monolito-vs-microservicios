@@ -1,0 +1,19 @@
+{
+  "name": "ticket-architecture-benchmark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Evaluation of performance and resource consumption between Modular Monolith and Microservices",
+  "workspaces": [
+    "shared",
+    "monolith",
+    "microservices/services/*"
+  ],
+  "scripts": {
+    "build": "npm --prefix shared run build && npm --prefix monolith run build",
+    "test": "npm --prefix tests test"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
+
