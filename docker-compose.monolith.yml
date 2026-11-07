@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: benchmark_monolith_postgres
+    environment:
+      POSTGRES_USER: benchmark_user
+      POSTGRES_PASSWORD: benchmark_pass
+      POSTGRES_DB: ticket_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./benchmark/scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./benchmark/scripts/seed-database.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U benchmark_user -d ticket_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  monolith:
+    build:
+      context: .
+      dockerfile: monolith/Dockerfile
+    container_name: benchmark_monolith_app
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: benchmark_user
+      DB_PASSWORD: benchmark_pass
+      DB_NAME: ticket_db
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+
